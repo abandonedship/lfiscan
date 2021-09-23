@@ -1,0 +1,5 @@
+c:/windows/system32/windowscodecsraw.txt
+c:/xampp/apache/logs/access.log
+c:/xampp/apache/logs/error.log
+c:/apache/logs/access.log
+c:/apache/logs/error.log

